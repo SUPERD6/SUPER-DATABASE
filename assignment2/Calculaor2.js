@@ -15,13 +15,39 @@ function deleteLast() {
     display.value = display.value.slice(0, -1);
 }
 
+// Prepare the expression for calculation
+function prepareExpression(expression) {
+    expression = expression.replace(/tanh|cos|log|sin|exp|sqrt|tan|ln|e|Π/g, match => {
+        switch (match) {
+            case 'tanh':
+            case 'cos':
+            case 'log':
+            case 'sin':
+            case 'exp':
+            case 'sqrt':
+            case 'tan':
+                return 'Math.' + match;
+            case 'ln':
+                return 'Math.log';
+            case 'e':
+                return 'Math.E';
+            case 'Π':
+                return 'Math.PI';
+            default:
+                return match;
+        }
+    });
+    return expression.replace(/\^/g, '**');
+}
+
 async function calculate() {
+    let preparedExpression = prepareExpression(display.value);
     let response = await fetch('http://localhost:3000/calculate', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({expression: display.value}),
+        body: JSON.stringify({expression: preparedExpression}),
     });
     let data = await response.json();
     if (data.error) {
@@ -49,7 +75,6 @@ function displayHistory(historyData) {
             li.textContent = historyData[i].expression + ' = ' + historyData[i].result;
             li.onclick = function() {
                 display.value = historyData[i].expression;
-                calculate();
             };
             historyElement.appendChild(li);
         }
