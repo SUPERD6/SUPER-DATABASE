@@ -25,7 +25,6 @@ db.run('CREATE TABLE IF NOT EXISTS history(expression text, result text)', (err)
   console.log('History table created.');
 });
 
-// Endpoint to calculate an expression
 app.post('/calculate', (req, res) => {
   let expression = req.body.expression;
   let result;
@@ -37,6 +36,9 @@ app.post('/calculate', (req, res) => {
         return console.log(err.message);
       }
       console.log(`A row has been inserted with rowid ${this.lastID}`);
+      
+      // Check the number of rows in the history table and delete the oldest if there are more than 10
+      db.run(`DELETE FROM history WHERE rowid NOT IN (SELECT rowid FROM history ORDER BY rowid DESC LIMIT 10)`);
     });
     res.json({ result: result });
   } catch (e) {
@@ -46,7 +48,7 @@ app.post('/calculate', (req, res) => {
 
 // Endpoint to get calculation history
 app.get('/history', (req, res) => {
-  db.all('SELECT * FROM history', [], (err, rows) => {
+  db.all('SELECT * FROM history ORDER BY rowid DESC', [], (err, rows) => {
     if (err) {
       throw err;
     }
@@ -58,4 +60,6 @@ app.get('/history', (req, res) => {
 // Start the server
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
+});
+
 });
